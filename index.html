@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Produce PLU Trainer</title>
+  <link rel="preconnect" href="https://api.fontshare.com">
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --text-xs: clamp(0.85rem, 0.8rem + 0.35vw, 0.975rem);
+      --text-sm: clamp(0.875rem, 0.8rem + 0.35vw, 1rem);
+      --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+      --text-lg: clamp(1.125rem, 1rem + 0.75vw, 1.5rem);
+      --text-xl: clamp(1.5rem, 1.2rem + 1.25vw, 2.25rem);
+      --space-1:0.25rem;--space-2:0.5rem;--space-3:0.75rem;--space-4:1rem;--space-5:1.25rem;--space-6:1.5rem;--space-8:2rem;--space-10:2.5rem;--space-12:3rem;
+      --radius-sm:0.375rem;--radius-md:0.75rem;--radius-lg:1rem;--radius-xl:1.25rem;--radius-full:9999px;
+      --color-bg:#fff8e8;
+      --color-surface:#fffdf8;
+      --color-surface-2:#fff1bf;
+      --color-surface-offset:#ffe082;
+      --color-border:rgba(33,21,0,.12);
+      --color-divider:rgba(132,93,0,.18);
+      --color-text:#231500;
+      --color-text-muted:#6b5414;
+      --color-text-faint:#988146;
+      --color-text-inverse:#fffdf7;
+      --color-primary:#e40026;
+      --color-primary-hover:#bf001f;
+      --color-primary-highlight:#ffe0b6;
+      --color-success:#2e6a35;
+      --shadow-sm:0 1px 2px rgba(66,44,0,.08),0 6px 18px rgba(66,44,0,.05);
+      --shadow-md:0 10px 30px rgba(66,44,0,.14);
+      --font-body:'Satoshi', sans-serif;
+      --transition-interactive:180ms cubic-bezier(.16,1,.3,1);
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{min-height:100dvh;font-family:var(--font-body);font-size:var(--text-base);line-height:1.55;background:var(--color-bg);color:var(--color-text)}
+    img{display:block;max-width:100%;height:auto}
+    button,input{font:inherit;color:inherit}
+    button{cursor:pointer;border:none;background:none}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    .app{display:grid;grid-template-columns:290px 1fr;min-height:100dvh}
+    .sidebar{padding:var(--space-6);background:linear-gradient(180deg,var(--color-surface-2),var(--color-surface));border-right:1px solid var(--color-border);display:flex;flex-direction:column;gap:var(--space-6)}
+    .brand{display:flex;align-items:center;gap:var(--space-3)}
+    .brand img{width:128px;height:128px;border-radius:50%;object-fit:cover;box-shadow:var(--shadow-sm)}
+    .brand h1{font-size:var(--text-lg);line-height:1.1}
+    .brand p{font-size:var(--text-xs);color:var(--color-text-muted)}
+    .nav{display:grid;gap:var(--space-2)}
+    .nav button{min-height:44px;padding:var(--space-3) var(--space-4);border-radius:var(--radius-lg);text-align:left;font-size:var(--text-sm);font-weight:700;color:var(--color-text-muted)}
+    .nav button.active,.nav button:hover{background:var(--color-primary);color:var(--color-text-inverse)}
+    .sidebar-card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--space-4);box-shadow:var(--shadow-sm)}
+    .sidebar-card p{margin-top:var(--space-2);font-size:var(--text-sm);color:var(--color-text-muted)}
+    .main{padding:var(--space-6);display:grid;gap:var(--space-6)}
+    .topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:var(--space-4);flex-wrap:wrap}
+    .title-wrap h2{font-size:var(--text-xl);line-height:1.06;max-width:18ch}
+    .title-wrap p{margin-top:var(--space-2);color:var(--color-text-muted)}
+    .top-actions{display:flex;gap:var(--space-3);align-items:center;flex-wrap:wrap}
+    .search{display:flex;align-items:center;gap:var(--space-2);padding:0 var(--space-4);min-height:48px;min-width:min(100%,260px);background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-full);box-shadow:var(--shadow-sm)}
+    .search input{width:100%;border:none;background:transparent;outline:none;padding:.8rem 0}
+    .btn{
+      min-height:40px;
+      padding:0.45rem 1.0rem;
+      border-radius:var(--radius-full);
+      font-size:var(--text-sm);
+      font-weight:700;
+      flex:0 0 auto;
+    }
+    .btn-secondary{background:var(--color-surface);border:1px solid var(--color-border)}
+    .btn-primary{background:var(--color-primary);color:var(--color-text-inverse)}
+    .btn-primary:hover{background:var(--color-primary-hover)}
+    .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--space-4)}
+    .card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--space-5);box-shadow:var(--shadow-sm)}
+    .stat-label{font-size:var(--text-xs);text-transform:uppercase;letter-spacing:.08em;color:var(--color-text-muted)}
+    .stat-value{margin-top:var(--space-2);font-size:var(--text-xl);font-weight:700}
+    .stat-note{margin-top:var(--space-2);font-size:var(--text-sm);color:var(--color-text-muted)}
+    .main-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:var(--space-6)}
+    .section-head{display:flex;justify-content:space-between;align-items:center;gap:var(--space-3);margin-bottom:var(--space-4)}
+    .section-head h3{font-size:var(--text-lg)}
+    .section-head p{font-size:var(--text-sm);color:var(--color-text-muted)}
+    .flash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:var(--space-4)}
+    .plu-card{padding:var(--space-5);border-radius:var(--radius-xl);background:linear-gradient(180deg,var(--color-surface),var(--color-surface-2));border:1px solid var(--color-divider);display:grid;gap:var(--space-3)}
+    .plu-card .meta{display:flex;justify-content:space-between;gap:var(--space-2);align-items:center;flex-wrap:wrap}
+    .pill{display:inline-flex;align-items:center;min-height:28px;padding:.3rem .7rem;border-radius:var(--radius-full);font-size:var(--text-xs);text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+    .pill.cat{background:var(--color-primary-highlight);color:var(--color-primary)}
+    .pill.mode{background:rgba(35,21,0,.08);color:var(--color-text-muted)}
+    .produce-name{font-size:var(--text-lg);font-weight:700}
+    .produce-code{font-size:2rem;font-weight:800;letter-spacing:.06em}
+    .muted{color:var(--color-text-muted)}
+    .quiz-stack{display:grid;gap:var(--space-4)}
+    .prompt{padding:var(--space-5);border-radius:var(--radius-xl);background:var(--color-surface-2);border:1px dashed var(--color-border)}
+    .prompt small{display:block;margin-bottom:var(--space-2);font-size:var(--text-xs);text-transform:uppercase;letter-spacing:.08em;color:var(--color-text-muted)}
+    .prompt strong{display:block;font-size:1.9rem}
+    .answer-row{display:flex;gap:var(--space-3);margin-top:var(--space-4)}
+    .answer-row input{flex:1;min-height:48px;padding:.85rem 1rem;border-radius:var(--radius-lg);border:1px solid var(--color-border);background:var(--color-surface)}
+    .feedback{min-height:1.5rem;margin-top:var(--space-3);font-size:var(--text-sm);font-weight:700}
+    .feedback.success{color:var(--color-success)}
+    .feedback.error{color:var(--color-primary)}
+    .list{display:grid;gap:var(--space-3);max-height:540px;overflow:auto;padding-right:var(--space-1)}
+    .list-row{display:flex;justify-content:space-between;align-items:center;gap:var(--space-4);padding:var(--space-4);background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg)}
+    .list-row small{display:block;color:var(--color-text-muted);font-size:var(--text-xs);text-transform:uppercase;letter-spacing:.06em;margin-top:.2rem;line-height:1.4;}
+    .helper{font-size:var(--text-xs);color:var(--color-text-faint)}
+    .tab-bar{
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      gap:var(--space-3);
+      margin-top:var(--space-3);
+      margin-bottom:var(--space-3);
+      flex-wrap:wrap;
+    }
+    #tabStudy,
+    #tabQuiz,
+    #setFast,
+    #setFull{
+      width:auto;
+      max-width:140px;
+      text-align:center;
+    }
+    @media (max-width: 1024px) {
+      .app{grid-template-columns:1fr}
+      .sidebar{border-right:none;border-bottom:1px solid var(--color-border)}
+      .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .main-grid{grid-template-columns:1fr}
+    }
+    @media (max-width: 680px) {
+      .main{padding:var(--space-4)}
+      .stats{grid-template-columns:1fr}
+      .search{min-width:100%}
+      .top-actions{width:100%;justify-content:flex-start}
+      .answer-row{flex-direction:column}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <img src="./assets/logo.png" alt="Young's logo" width="128" height="128" loading="lazy" />
+        <div>
+          <h1>PLU Training</h1>
+          <p>Have fun!</p>
+        </div>
+      </div>
+      <nav class="nav" aria-label="Categories">
+        <button class="active" data-filter="all">All items</button>
+        <button data-filter="fruit">Fruits</button>
+        <button data-filter="vegetable">Vegetables</button>
+        <button data-filter="frozen">Frozen</button>
+      </nav>
+      <div class="sidebar-card">
+        <strong>Training flow</strong>
+        <p>Pick a category, study the code cards, then run the quiz until you can answer without looking.</p>
+      </div>
+      <div class="sidebar-card">
+        <strong>2 Options</strong>
+        <p>Fast mover or full list — switch on the top bar.</p>
+      </div>
+    </aside>
+    <main class="main">
+      <header class="topbar">
+        <div class="title-wrap">
+          <h2>Young's Market</h2>
+          <p>2188 McPhillip St. 🍁 397 William Ave. 🍁 1000 McPhillips St.</p>
+        </div>
+        <div class="top-actions">
+          <label class="search" aria-label="Search produce or code">
+            <span aria-hidden="true">🔎</span>
+            <span class="sr-only">Search</span>
+            <input id="searchInput" type="search" placeholder="Search" />
+          </label>
+        </div>
+      </header>
+
+      <!-- dataset + view tabs -->
+      <div class="tab-bar">
+        <button class="btn btn-primary" id="setFast">Fast mover</button>
+        <button class="btn btn-secondary" id="setFull">Full PLU</button>
+        <button class="btn btn-secondary" id="tabStudy">Study</button>
+        <button class="btn btn-secondary" id="tabQuiz">Quiz</button>
+      </div>
+
+      <section class="stats" aria-label="Summary stats">
+        <article class="card"><div class="stat-label">Loaded items</div><div class="stat-value" id="totalItems">0</div><div class="stat-note">From selected list</div></article>
+        <article class="card"><div class="stat-label">Category</div><div class="stat-value" id="currentFilter">All</div><div class="stat-note">Use left menu to focus</div></article>
+        <article class="card"><div class="stat-label">Quiz score</div><div class="stat-value" id="scoreValue">0%</div><div class="stat-note" id="scoreNote">No attempts yet</div></article>
+        <article class="card"><div class="stat-label">Code types</div><div class="stat-value" id="codeTypes">0</div><div class="stat-note">Each and scale tracking</div></article>
+      </section>
+
+      <!-- STUDY VIEW -->
+      <section class="main-grid" id="studyView">
+        <article class="card">
+          <div class="section-head">
+            <div><h3>Flash cards</h3><p>Review items exactly as listed.</p></div>
+            <button class="btn btn-secondary" id="shuffleBtn">Shuffle</button>
+          </div>
+          <div class="flash-grid" id="flashGrid"></div>
+        </article>
+        <article class="card">
+          <div class="section-head">
+            <div><h3>Master list</h3><p>Search or scroll the live item list.</p></div>
+          </div>
+          <div class="list" id="produceList"></div>
+        </article>
+      </section>
+
+      <!-- QUIZ VIEW -->
+      <section class="main-grid" id="quizView" style="display:none;">
+        <article class="card">
+          <div class="section-head">
+            <div><h3>Quick quiz</h3><p>Type the code from memory.</p></div>
+            <button class="btn btn-secondary" id="nextQuestion">Next</button>
+          </div>
+          <div class="prompt">
+            <small>What is the code for</small>
+            <strong id="quizItem">Loading…</strong>
+            <div class="helper" id="quizMeta"></div>
+          </div>
+          <div class="answer-row">
+            <input id="quizAnswer" inputmode="numeric" placeholder="Enter code" />
+            <button class="btn btn-primary" id="checkAnswer">Check</button>
+          </div>
+          <div class="feedback" id="feedback"></div>
+        </article>
+      </section>
+
+      <p class="helper">Tip: codes marked each and scale come directly from your PLU sheets.</p>
+    </main>
+  </div>
+
+  <script>
+    // FAST MOVER items (short list)
+    const fastItems = [
+      { name: 'Calamansi', plu: '995', category: 'fruit', type: 'each' },
+      { name: 'Celery', plu: '514', category: 'vegetable', type: 'each' },
+      { name: 'Milk Fish Taiwan', plu: '700', category: 'frozen', type: 'scale' },
+      { name: 'Lemon', plu: '250', category: 'fruit', type: 'each' },
+      { name: 'Cilantro', plu: '518', category: 'vegetable', type: 'each' },
+      { name: 'Milk Fish Phillipine', plu: '699', category: 'frozen', type: 'scale' },
+      { name: 'Limes', plu: '251', category: 'fruit', type: 'each' },
+      { name: 'Cumcumber English', plu: '244', category: 'vegetable', type: 'each' },
+      { name: 'Tilapia', plu: '701', category: 'frozen', type: 'scale' },
+      { name: 'Mango Mexico', plu: '261', category: 'fruit', type: 'each' },
+      { name: 'Garlic 1Kg', plu: '5431', category: 'vegetable', type: 'each' },
+      { name: 'Mango Yellow', plu: '301', category: 'fruit', type: 'each' },
+      { name: "Garlic 3'S", plu: '543', category: 'vegetable', type: 'each' },
+      { name: 'Lettuce Cello', plu: '580', category: 'vegetable', type: 'each' },
+      { name: 'Lettuce Green Leaf', plu: '545', category: 'vegetable', type: 'each' },
+      { name: 'Onions Bagged', plu: '592', category: 'vegetable', type: 'each' },
+      { name: 'Onions Green', plu: '546', category: 'vegetable', type: 'each' },
+      { name: 'Banana Thai', plu: '309', category: 'fruit', type: 'scale' },
+      { name: 'Baby Bak Choy', plu: '500', category: 'vegetable', type: 'scale' },
+      { name: 'Bananas', plu: '203', category: 'fruit', type: 'scale' },
+      { name: 'Bean Sprouts', plu: '501', category: 'vegetable', type: 'scale' },
+      { name: 'Mandarin', plu: '4454', category: 'fruit', type: 'scale' },
+      { name: 'Broccoli', plu: '504', category: 'vegetable', type: 'scale' },
+      { name: 'Oranges', plu: '280', category: 'fruit', type: 'scale' },
+      { name: 'Cabbage Green', plu: '510', category: 'vegetable', type: 'scale' },
+      { name: 'Rambutan', plu: '257', category: 'fruit', type: 'scale' },
+      { name: 'Cabbage Taiwan', plu: '509', category: 'vegetable', type: 'scale' },
+      { name: 'Carrot Jumbo', plu: '511', category: 'vegetable', type: 'scale' },
+      { name: 'Chayote', plu: '515', category: 'vegetable', type: 'scale' },
+      { name: 'Daikon', plu: '520', category: 'vegetable', type: 'scale' },
+      { name: 'Eggplant', plu: '530', category: 'vegetable', type: 'scale' },
+      { name: 'Gai Choy Baby', plu: '541', category: 'vegetable', type: 'scale' },
+      { name: 'Gailan', plu: '542', category: 'vegetable', type: 'scale' },
+      { name: 'Ginger', plu: '245', category: 'vegetable', type: 'scale' },
+      { name: 'Green Beans', plu: '534', category: 'vegetable', type: 'scale' },
+      { name: 'Papaya Green', plu: '547', category: 'vegetable', type: 'scale' },
+      { name: 'Shanghai Bok Choy', plu: '621', category: 'vegetable', type: 'scale' },
+      { name: 'Squash Whole', plu: '604', category: 'vegetable', type: 'scale' },
+      { name: 'Sui Choy', plu: '622', category: 'vegetable', type: 'scale' },
+      { name: 'Taro Root Big', plu: '630', category: 'vegetable', type: 'scale' },
+      { name: 'Taro Root Small', plu: '623', category: 'vegetable', type: 'scale' },
+      { name: 'Tomato Roma', plu: '634', category: 'vegetable', type: 'scale' },
+      { name: 'Tomato Round', plu: '633', category: 'vegetable', type: 'scale' },
+      { name: 'Yu Choy', plu: '652', category: 'vegetable', type: 'scale' }
+    ];
+
+    // FULL PLU items (from Full-PLU.xlsx)
+    const allItems = [
+      { name: 'Avacado', plu: '211', category: 'produce', type: 'each' },
+      { name: 'Apples Fuji Asian', plu: '204', category: 'fruit', type: 'scale' },
+      { name: 'Baby Bak Choy', plu: '500', category: 'vegetable', type: 'scale' },
+      { name: 'Avacado Jumbo', plu: '4771', category: 'produce', type: 'each' },
+      { name: 'Apples Fuji Cdn', plu: '200', category: 'fruit', type: 'scale' },
+      { name: 'Baby Cucumber', plu: '516', category: 'vegetable', type: 'scale' },
+      { name: 'Calamansi', plu: '995', category: 'produce', type: 'each' },
+      { name: 'Apples Galas', plu: '202', category: 'fruit', type: 'scale' },
+      { name: 'Bean Sprouts', plu: '501', category: 'vegetable', type: 'scale' },
+      { name: 'Cantaloupe', plu: '220', category: 'produce', type: 'each' },
+      { name: 'Apples Red Del', plu: '201', category: 'fruit', type: 'scale' },
+      { name: 'Bittermelon', plu: '502', category: 'vegetable', type: 'scale' },
+      { name: 'Cauliflowers', plu: '513', category: 'produce', type: 'each' },
+      { name: 'Banana Baby', plu: '307', category: 'fruit', type: 'scale' },
+      { name: 'Broccoli', plu: '504', category: 'vegetable', type: 'scale' },
+      { name: 'Celery', plu: '514', category: 'produce', type: 'each' },
+      { name: 'Banana Plantains', plu: '4235', category: 'fruit', type: 'scale' },
+      { name: 'Cabbage Green', plu: '510', category: 'vegetable', type: 'scale' },
+      { name: 'Cilantro', plu: '518', category: 'produce', type: 'each' },
+      { name: 'Banana Saba', plu: '4229', category: 'fruit', type: 'scale' },
+      { name: 'Cabbage Taiwan', plu: '509', category: 'vegetable', type: 'scale' },
+      { name: 'Coconut Brown', plu: '221', category: 'produce', type: 'each' },
+      { name: 'Banana Thai', plu: '309', category: 'fruit', type: 'scale' },
+      { name: 'Cassava Root', plu: '512', category: 'vegetable', type: 'scale' },
+      { name: 'Coconut Young', plu: '222', category: 'produce', type: 'each' },
+      { name: 'Bananas', plu: '4011', category: 'fruit', type: 'scale' },
+      { name: 'Chayote', plu: '515', category: 'vegetable', type: 'scale' },
+      { name: 'Cucumer Slicer', plu: '519', category: 'produce', type: 'each' },
+      { name: 'Durian Fresh', plu: '230', category: 'fruit', type: 'scale' },
+      { name: 'Chestnuts', plu: '521', category: 'vegetable', type: 'scale' },
+      { name: 'Cumcucumber English', plu: '244', category: 'produce', type: 'each' },
+      { name: 'Durian Frozen', plu: '231', category: 'fruit', type: 'scale' },
+      { name: 'Daikon', plu: '520', category: 'vegetable', type: 'scale' },
+      { name: 'Garlic 1Kg', plu: '5431', category: 'produce', type: 'each' },
+      { name: 'Grapes Black', plu: '4056', category: 'fruit', type: 'scale' },
+      { name: 'Eggplant', plu: '530', category: 'vegetable', type: 'scale' },
+      { name: 'Garlic Bagged', plu: '543', category: 'produce', type: 'each' },
+      { name: 'Grapes Globes', plu: '4636', category: 'fruit', type: 'scale' },
+      { name: 'Gai Choy Baby (Mustard)', plu: '3161', category: 'vegetable', type: 'scale' },
+      { name: 'Grapefruit', plu: '321', category: 'produce', type: 'each' },
+      { name: 'Grapes Green', plu: '4022', category: 'fruit', type: 'scale' },
+      { name: 'Gailan', plu: '3160', category: 'vegetable', type: 'scale' },
+      { name: 'Guava Baby', plu: '4294', category: 'produce', type: 'each' },
+      { name: 'Grapes Red', plu: '4023', category: 'fruit', type: 'scale' },
+      { name: 'Ginger', plu: '245', category: 'vegetable', type: 'scale' },
+      { name: 'Honey Dews', plu: '324', category: 'produce', type: 'each' },
+      { name: 'Guava', plu: '240', category: 'fruit', type: 'scale' },
+      { name: 'Green Beans', plu: '534', category: 'vegetable', type: 'scale' },
+      { name: 'Jute Eaves', plu: '563', category: 'produce', type: 'each' },
+      { name: 'Jackfruit Whole', plu: '314', category: 'fruit', type: 'scale' },
+      { name: 'Jicama Root', plu: '550', category: 'vegetable', type: 'scale' },
+      { name: 'Kang Kong Per Bunch', plu: '562', category: 'produce', type: 'each' },
+      { name: 'Longans', plu: '252', category: 'fruit', type: 'scale' },
+      { name: 'Lotus Root', plu: '574', category: 'vegetable', type: 'scale' },
+      { name: 'Kiwi', plu: '4030', category: 'produce', type: 'each' },
+      { name: 'Mandarins', plu: '260', category: 'fruit', type: 'scale' },
+      { name: 'Onions Red Loose', plu: '611', category: 'vegetable', type: 'scale' },
+      { name: 'Kiwi Golden', plu: '3279', category: 'produce', type: 'each' },
+      { name: 'Mangoes Green', plu: '242', category: 'fruit', type: 'scale' },
+      { name: 'Onions White Loose', plu: '613', category: 'vegetable', type: 'scale' },
+      { name: 'Lemon', plu: '250', category: 'produce', type: 'each' },
+      { name: 'Manila Mangos', plu: '301', category: 'fruit', type: 'scale' },
+      { name: 'Onions Yellow', plu: '591', category: 'vegetable', type: 'scale' },
+      { name: 'Lettuce Cello', plu: '560', category: 'produce', type: 'each' },
+      { name: 'Nectarines', plu: '4378', category: 'fruit', type: 'scale' },
+      { name: 'Papaya Green', plu: '547', category: 'vegetable', type: 'scale' },
+      { name: 'Lettuce Green Leaf', plu: '545', category: 'produce', type: 'each' },
+      { name: 'Nectarines White', plu: '271', category: 'fruit', type: 'scale' },
+      { name: 'Patola (Sin Qua)', plu: '600', category: 'vegetable', type: 'scale' },
+      { name: 'Lettuce Romanie', plu: '539', category: 'produce', type: 'each' },
+      { name: 'Oranges', plu: '280', category: 'fruit', type: 'scale' },
+      { name: 'Patola Taiwan (Sin Qua)', plu: '626', category: 'vegetable', type: 'scale' },
+      { name: 'Limes', plu: '251', category: 'produce', type: 'each' },
+      { name: 'Papaya Mini', plu: '3111', category: 'fruit', type: 'scale' },
+      { name: 'Peanut Shell-On', plu: '610', category: 'vegetable', type: 'scale' },
+      { name: 'Mango Ataulfo Box', plu: '299', category: 'produce', type: 'each' },
+      { name: 'Papaya Sweet Large', plu: '3112', category: 'fruit', type: 'scale' },
+      { name: 'Peanuts Fresh', plu: '7022', category: 'vegetable', type: 'scale' },
+      { name: 'Mango Mexico', plu: '261', category: 'produce', type: 'each' },
+      { name: 'Peaches', plu: '318', category: 'fruit', type: 'scale' },
+      { name: 'Peppers Green', plu: '601', category: 'vegetable', type: 'scale' },
+      { name: 'Mango Mexico Box', plu: '298', category: 'produce', type: 'each' },
+      { name: 'Pear Asian Brown', plu: '4408', category: 'fruit', type: 'scale' },
+      { name: 'Peppers Red', plu: '602', category: 'vegetable', type: 'scale' },
+      { name: 'Morning Glory', plu: '561', category: 'produce', type: 'each' },
+      { name: 'Pear Asian Yellow', plu: '4407', category: 'fruit', type: 'scale' },
+      { name: 'Potatoes Loose', plu: '243', category: 'vegetable', type: 'scale' },
+      { name: 'Onions Bagged', plu: '592', category: 'produce', type: 'each' },
+      { name: 'Pear Bartlett', plu: '4409', category: 'fruit', type: 'scale' },
+      { name: 'Shanghai Bok Choy', plu: '621', category: 'vegetable', type: 'scale' },
+      { name: 'Onions Green', plu: '4068', category: 'produce', type: 'each' },
+      { name: 'Pear Bartlett Red', plu: '4415', category: 'fruit', type: 'scale' },
+      { name: 'Squash Long (Opo)', plu: '572', category: 'vegetable', type: 'scale' },
+      { name: 'Pineapple', plu: '326', category: 'produce', type: 'each' },
+      { name: 'Pear Bosc', plu: '4413', category: 'fruit', type: 'scale' },
+      { name: 'Squash Mo Qua(Fuzzy)', plu: '581', category: 'vegetable', type: 'scale' },
+      { name: 'Pomegrante', plu: '232', category: 'produce', type: 'each' },
+      { name: 'Pear Fragrants', plu: '306', category: 'fruit', type: 'scale' },
+      { name: 'Squash Whole', plu: '4769', category: 'vegetable', type: 'scale' },
+      { name: 'Pomelo', plu: '297', category: 'produce', type: 'each' },
+      { name: 'Pear Yaili', plu: '4890', category: 'fruit', type: 'scale' },
+      { name: 'Sui Choy', plu: '622', category: 'vegetable', type: 'scale' },
+      { name: 'Shallots Bagged', plu: '620', category: 'produce', type: 'each' },
+      { name: 'Persimmon Fujyu', plu: '294', category: 'fruit', type: 'scale' },
+      { name: 'Sweet Potatoes Pink', plu: '627', category: 'vegetable', type: 'scale' },
+      { name: 'Sigarilla Wing Bean', plu: '1002', category: 'produce', type: 'each' },
+      { name: 'Plums Black', plu: '4040', category: 'fruit', type: 'scale' },
+      { name: 'Taro Root Big', plu: '4795', category: 'vegetable', type: 'scale' },
+      { name: 'Spinach', plu: '624', category: 'produce', type: 'each' },
+      { name: 'Plums Red', plu: '4041', category: 'fruit', type: 'scale' },
+      { name: 'Taro Root Small', plu: '4794', category: 'vegetable', type: 'scale' },
+      { name: 'Star Fruit', plu: '292', category: 'produce', type: 'each' },
+      { name: 'Prunes', plu: '3333', category: 'fruit', type: 'scale' },
+      { name: 'Tomato Hot House', plu: '4799', category: 'vegetable', type: 'scale' },
+      { name: 'Sugar Cane Stick', plu: '331', category: 'produce', type: 'each' },
+      { name: 'Sugar Mandarin', plu: '262', category: 'fruit', type: 'scale' },
+      { name: 'Tomato Round', plu: '633', category: 'vegetable', type: 'scale' },
+      { name: 'Water Cress', plu: '640', category: 'produce', type: 'each' },
+      { name: 'Tangerine Honey', plu: '4453', category: 'fruit', type: 'scale' },
+      { name: 'Tomato On Vine', plu: '4664', category: 'vegetable', type: 'scale' },
+      { name: 'Watermelon', plu: '330', category: 'produce', type: 'each' },
+      { name: 'Watermelon Mini', plu: '320', category: 'produce', type: 'each' },
+      { name: 'Tomato Roma', plu: '634', category: 'vegetable', type: 'scale' },
+      { name: 'Yam Orange', plu: '650', category: 'vegetable', type: 'scale' },
+      { name: 'Yam Purple Dark Skin', plu: '629', category: 'vegetable', type: 'scale' },
+      { name: 'Yam Purple Light Skin', plu: '651', category: 'vegetable', type: 'scale' },
+      { name: 'Yam Yellow', plu: '625', category: 'vegetable', type: 'scale' },
+      { name: 'Yu Choy', plu: '652', category: 'vegetable', type: 'scale' },
+      { name: 'Zuchinni', plu: '632', category: 'vegetable', type: 'scale' },
+      { name: 'Bag', plu: '8005', category: 'vegetable', type: 'scale' },
+      { name: 'Milk Fish Regular', plu: '700', category: 'frozen', type: 'scale' },
+      { name: 'Milkfish Phillipine', plu: '699', category: 'frozen', type: 'scale' },
+      { name: 'Tilapia Clean', plu: '701', category: 'frozen', type: 'scale' }
+    ];
+
+    // active dataset (starts with fast)
+    let activeItems = fastItems;
+
+    let state = {
+      filter: 'all',
+      search: '',
+      score: { right: 0, total: 0 },
+      currentQuestion: null
+    };
+
+    const searchInput = document.getElementById('searchInput');
+    const flashGrid = document.getElementById('flashGrid');
+    const produceList = document.getElementById('produceList');
+    const totalItems = document.getElementById('totalItems');
+    const currentFilter = document.getElementById('currentFilter');
+    const scoreValue = document.getElementById('scoreValue');
+    const scoreNote = document.getElementById('scoreNote');
+    const codeTypes = document.getElementById('codeTypes');
+    const quizItem = document.getElementById('quizItem');
+    const quizMeta = document.getElementById('quizMeta');
+    const quizAnswer = document.getElementById('quizAnswer');
+    const feedback = document.getElementById('feedback');
+
+    const studyView = document.getElementById('studyView');
+    const quizView = document.getElementById('quizView');
+    const tabStudy = document.getElementById('tabStudy');
+    const tabQuiz = document.getElementById('tabQuiz');
+    const setFastBtn = document.getElementById('setFast');
+    const setFullBtn = document.getElementById('setFull');
+
+    function filteredItems() {
+      return activeItems.filter(item => {
+        const categoryMatch = state.filter === 'all' || item.category === state.filter;
+        const term = state.search.trim().toLowerCase();
+        const searchMatch = !term || item.name.toLowerCase().includes(term) || item.plu.includes(term) || item.type.toLowerCase().includes(term);
+        return categoryMatch && searchMatch;
+      });
+    }
+
+    function render() {
+      const items = filteredItems();
+      totalItems.textContent = items.length;
+      currentFilter.textContent = state.filter === 'all'
+        ? 'All'
+        : state.filter.charAt(0).toUpperCase() + state.filter.slice(1);
+      scoreValue.textContent = state.score.total
+        ? Math.round((state.score.right / state.score.total) * 100) + '%'
+        : '0%';
+      scoreNote.textContent = state.score.total
+        ? `${state.score.right} right out of ${state.score.total}`
+        : 'No attempts yet';
+      codeTypes.textContent = new Set(items.map(item => item.type)).size;
+
+      flashGrid.innerHTML = items.map(item => `
+        <article class="plu-card">
+          <div class="meta">
+            <span class="pill cat">${item.category}</span>
+            <span class="pill mode">${item.type || 'code'}</span>
+          </div>
+          <div class="produce-name">${item.name}</div>
+          <div class="produce-code">${item.plu}</div>
+          <div class="muted">Repeat the name and code together for fast recall.</div>
+        </article>
+      `).join('');
+
+      produceList.innerHTML = items
+        .slice()
+        .sort((a,b)=>a.name.localeCompare(b.name))
+        .map(item => `
+          <div class="list-row">
+            <div>
+              <strong>${item.name}</strong>
+              <small>${item.category} · ${item.type}</small>
+            </div>
+            <strong>${item.plu}</strong>
+          </div>
+        `).join('');
+
+      if (!items.length) {
+        flashGrid.innerHTML = '<article class="card"><strong>No items found.</strong><p class="muted">Try another search or category.</p></article>';
+        produceList.innerHTML = '<div class="list-row"><div><strong>No match</strong><small>Change the filter or search</small></div><strong>—</strong></div>';
+      }
+
+      document
+        .querySelectorAll('.nav button')
+        .forEach(btn => btn.classList.toggle('active', btn.dataset.filter === state.filter));
+    }
+
+    function pickQuestion() {
+      const pool = filteredItems().length ? filteredItems() : activeItems;
+      state.currentQuestion = pool[Math.floor(Math.random() * pool.length)];
+      quizItem.textContent = state.currentQuestion.name;
+      quizMeta.textContent = `${state.currentQuestion.category} · ${state.currentQuestion.type}`;
+      quizAnswer.value = '';
+      feedback.textContent = '';
+      feedback.className = 'feedback';
+    }
+
+    // category filter buttons
+    document
+      .querySelectorAll('.nav button')
+      .forEach(btn => btn.addEventListener('click', () => {
+        state.filter = btn.dataset.filter;
+        render();
+        pickQuestion();
+      }));
+
+    searchInput.addEventListener('input', e => {
+      state.search = e.target.value;
+      render();
+    });
+
+    document.getElementById('shuffleBtn').addEventListener('click', () => {
+      activeItems.sort(() => Math.random() - 0.5);
+      render();
+    });
+
+    document.getElementById('nextQuestion').addEventListener('click', pickQuestion);
+
+    document.getElementById('checkAnswer').addEventListener('click', () => {
+      if (!state.currentQuestion) pickQuestion();
+      state.score.total += 1;
+
+      const isCorrect = quizAnswer.value.trim() === state.currentQuestion.plu;
+
+      if (isCorrect) {
+        state.score.right += 1;
+        feedback.textContent = 'Correct. Nice work.';
+        feedback.className = 'feedback success';
+
+        // auto-next after a short delay
+        setTimeout(() => {
+          pickQuestion();
+        }, 600);
+      } else {
+        feedback.textContent = `Ah ah. ${state.currentQuestion.name} is ${state.currentQuestion.plu}. Click next to continue.`;
+        feedback.className = 'feedback error';
+      }
+
+      render();
+    });
+
+    quizAnswer.addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('checkAnswer').click();
+    });
+
+    // Study / Quiz tab switching
+    function showStudy() {
+      studyView.style.display = 'grid';
+      quizView.style.display = 'none';
+      tabStudy.classList.add('btn-primary');
+      tabStudy.classList.remove('btn-secondary');
+      tabQuiz.classList.add('btn-secondary');
+      tabQuiz.classList.remove('btn-primary');
+    }
+
+    function showQuiz() {
+      studyView.style.display = 'none';
+      quizView.style.display = 'grid';
+      tabQuiz.classList.add('btn-primary');
+      tabQuiz.classList.remove('btn-secondary');
+      tabStudy.classList.add('btn-secondary');
+      tabStudy.classList.remove('btn-primary');
+      pickQuestion();
+    }
+
+    tabStudy.addEventListener('click', showStudy);
+    tabQuiz.addEventListener('click', showQuiz);
+
+    // Fast / Full dataset switching
+    function useFast() {
+      activeItems = fastItems;
+      state.filter = 'all';
+      state.search = '';
+      setFastBtn.classList.add('btn-primary');
+      setFastBtn.classList.remove('btn-secondary');
+      setFullBtn.classList.add('btn-secondary');
+      setFullBtn.classList.remove('btn-primary');
+      render();
+      pickQuestion();
+    }
+
+    function useFull() {
+      activeItems = allItems;
+      state.filter = 'all';
+      state.search = '';
+      setFullBtn.classList.add('btn-primary');
+      setFullBtn.classList.remove('btn-secondary');
+      setFastBtn.classList.add('btn-secondary');
+      setFastBtn.classList.remove('btn-primary');
+      render();
+      pickQuestion();
+    }
+
+    setFastBtn.addEventListener('click', useFast);
+    setFullBtn.addEventListener('click', useFull);
+
+    // initial state
+    useFast();
+    showStudy();
+  </script>
+</body>
+</html>
