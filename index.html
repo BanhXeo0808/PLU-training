@@ -684,6 +684,11 @@
     limit,
     getDocs
   } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+  import {
+    getAuth,
+    signInAnonymously,
+    onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAPKiEPTU44_FtBiDbM0O7hBjvgHdrp_Pk",
@@ -697,6 +702,12 @@
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
+  const auth = getAuth(app);
+
+  // Start anonymous sign‑in
+  signInAnonymously(auth).catch((error) => {
+    console.error("Anon sign‑in error", error);
+  });
 
   const nameInput = document.getElementById("player-name-input");
   const saveBtn = document.getElementById("save-score-btn");
@@ -835,8 +846,14 @@
     saveScoreToFirestore(name, right, total, mode, scope, allRun);
   });
 
-  // Load both boards on page load
-  loadLeaderboards();
+  onAuthStateChanged(auth, (user) => {
+  if (user) {
+    // user is signed in anonymously; safe to hit Firestore
+    loadLeaderboards();
+  } else {
+    console.warn("Not signed in; leaderboards not loaded.");
+  }
+});
 </script>
 </body>
 </html>
