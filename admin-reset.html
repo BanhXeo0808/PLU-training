@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>PLU Leaderboard Admin</title>
+</head>
+<body>
+  <h1>Admin – Reset leaderboard</h1>
+  <button id="reset-scores-btn">Reset ALL scores</button>
+  <p id="status"></p>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      getDocs,
+      deleteDoc,
+      doc
+    } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAPKiEPTU44_FtBiDbM0O7hBjvgHdrp_Pk",
+      authDomain: "youngs-plu-training.firebaseapp.com",
+      projectId: "youngs-plu-training",
+      storageBucket: "youngs-plu-training.firebasestorage.app",
+      messagingSenderId: "614316009281",
+      appId: "1:614316009281:web:127a2cdb75f96f9ab7a3c0",
+      measurementId: "G-M1S0LE5X3F"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const resetBtn = document.getElementById("reset-scores-btn");
+    const statusEl = document.getElementById("status");
+
+    resetBtn.addEventListener("click", async () => {
+      const ok = confirm("Reset ALL scores for both leaderboards?");
+      if (!ok) return;
+
+      statusEl.textContent = "Clearing scores...";
+      try {
+        const snap = await getDocs(collection(db, "scores"));
+        const deletes = [];
+        snap.forEach(d => {
+          deletes.push(deleteDoc(doc(db, "scores", d.id)));
+        });
+        await Promise.all(deletes);
+        statusEl.textContent = "All scores cleared.";
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = "Error clearing scores.";
+      }
+    });
+  </script>
+</body>
+</html>
