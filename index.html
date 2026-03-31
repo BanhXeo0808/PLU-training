@@ -221,6 +221,33 @@
             <button class="btn btn-primary" id="checkAnswer">Check</button>
           </div>
           <div class="feedback" id="feedback"></div>
+                    <!-- Leaderboard: name input + save button + list -->
+          <div id="leaderboard-card" style="margin-top: 16px; padding: 12px; border-radius: 12px; background-color: #f8fafc; border: 1px solid #e2e8f0;">
+            <h3 style="margin: 0 0 8px 0; font-size: 18px;">Leaderboard</h3>
+
+            <div style="display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
+              <input
+                id="player-name-input"
+                type="text"
+                placeholder="Type your name"
+                maxlength="20"
+                style="flex: 1; min-width: 140px; padding: 6px 8px; border-radius: 8px; border: 1px solid #cbd5f5;"
+              />
+              <button
+                id="save-score-btn"
+                class="btn btn-primary"
+                style="padding: 6px 12px; border-radius: 8px; cursor: pointer;"
+              >
+                Save score
+              </button>
+            </div>
+
+            <small id="leaderboard-message" style="display:block; margin-bottom: 6px; color:#64748b;"></small>
+
+            <ol id="leaderboard-list" style="padding-left: 20px; margin: 0; font-size: 14px; color:#0f172a;">
+              <!-- Scores will be injected here -->
+            </ol>
+          </div>
         </article>
       </section>
 
@@ -614,5 +641,117 @@
     useFast();
     showStudy();
   </script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      query,
+      orderBy,
+      limit,
+      getDocs
+    } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+    // Your Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyAPKiEPTU44_FtBiDbM0O7hBjvgHdrp_Pk",
+      authDomain: "youngs-plu-training.firebaseapp.com",
+      projectId: "youngs-plu-training",
+      storageBucket: "youngs-plu-training.firebasestorage.app",
+      messagingSenderId: "614316009281",
+      appId: "1:614316009281:web:127a2cdb75f96f9ab7a3c0",
+      measurementId: "G-M1S0LE5X3F"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const nameInput = document.getElementById("player-name-input");
+    const saveBtn = document.getElementById("save-score-btn");
+    const listEl = document.getElementById("leaderboard-list");
+    const msgEl = document.getElementById("leaderboard-message");
+
+    async function saveScoreToFirestore(name, right, total) {
+      if (!name) {
+        msgEl.textContent = "Please enter your name before saving.";
+        return;
+      }
+      if (!total || total === 0) {
+        msgEl.textContent = "Do the quiz first to get a score.";
+        return;
+      }
+
+      const percent = Math.round((right / total) * 100);
+
+      try {
+        await addDoc(collection(db, "scores"), {
+          name,
+          right,
+          total,
+          percent,
+          createdAt: Date.now()
+        });
+        msgEl.textContent = "Score saved!";
+        nameInput.value = "";
+        await loadLeaderboard();
+      } catch (err) {
+        console.error(err);
+        msgEl.textContent = "Error saving score. Try again.";
+      }
+    }
+
+    async function loadLeaderboard() {
+      if (!listEl) return;
+      listEl.innerHTML = "<li>Loading...</li>";
+
+      try {
+        const q = query(
+          collection(db, "scores"),
+          orderBy("percent", "desc"),
+          orderBy("createdAt", "asc"),
+          limit(20)
+        );
+
+        const snap = await getDocs(q);
+        const items = [];
+
+        snap.forEach((doc) => {
+          items.push(doc.data());
+        });
+
+        if (items.length === 0) {
+          listEl.innerHTML = "<li>No scores yet. Be the first!</li>";
+          return;
+        }
+
+        listEl.innerHTML = "";
+        items.forEach((item, index) => {
+          const li = document.createElement("li");
+          li.textContent = `${index + 1}. ${item.name} — ${item.percent}% (${item.right}/${item.total})`;
+          listEl.appendChild(li);
+        });
+      } catch (err) {
+        console.error(err);
+        listEl.innerHTML = "<li>Could not load leaderboard.</li>";
+      }
+    }
+
+    // Hook up button – uses your existing state.score
+    saveBtn.addEventListener("click", () => {
+      const name = nameInput.value.trim();
+
+      // Use the score from your main script
+      const right = window.state?.score?.right ?? 0;
+      const total = window.state?.score?.total ?? 0;
+
+      saveScoreToFirestore(name, right, total);
+    });
+
+    // Load leaderboard on page load
+    loadLeaderboard();
+  </script>
+</body>
+</html>
 </body>
 </html>
