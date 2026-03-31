@@ -465,7 +465,9 @@
       search: '',
       score: { right: 0, total: 0 },
       currentQuestion: null,
-      allRun: true
+      allRun: true,
+      maxQuestions: 30,         
+      quizFinished: false       
     };
     window.state = state;
 
@@ -585,23 +587,27 @@
     document.getElementById('nextQuestion').addEventListener('click', pickQuestion);
 
     document.getElementById('checkAnswer').addEventListener('click', () => {
-      if (!state.currentQuestion) pickQuestion();
-      state.score.total += 1;
+      if (!state.currentQuestion || state.quizFinished) return;
 
+      state.score.total += 1;
       const isCorrect = quizAnswer.value.trim() === state.currentQuestion.plu;
 
       if (isCorrect) {
         state.score.right += 1;
         feedback.textContent = 'Correct. Nice work.';
         feedback.className = 'feedback success';
-
-        // auto-next after a short delay
-        setTimeout(() => {
-          pickQuestion();
-        }, 1800);
       } else {
         feedback.textContent = `Ah ah. ${state.currentQuestion.name} is ${state.currentQuestion.plu}. Click next to continue.`;
         feedback.className = 'feedback error';
+      }
+
+      if (state.score.total >= state.maxQuestions) {
+        state.quizFinished = true;
+        feedback.textContent += ' You reached 30 questions. Save your score or start a new run.';
+      } else if (isCorrect) {
+        setTimeout(() => {
+          pickQuestion();
+        }, 1500);
       }
 
       render();
@@ -641,6 +647,7 @@
       state.search = '';
       state.score = { right: 0, total: 0 };
       state.allRun = true;
+      state.quizFinished = false;
       window.currentMode = 'fast';
       setFastBtn.classList.add('btn-primary');
       setFastBtn.classList.remove('btn-secondary');
@@ -656,6 +663,7 @@
       state.search = '';
       state.score = { right: 0, total: 0 };
       state.allRun = true;
+      state.quizFinished = false;
       window.currentMode = 'full';
       setFullBtn.classList.add('btn-primary');
       setFullBtn.classList.remove('btn-secondary');
@@ -740,7 +748,7 @@
         scope,
         createdAt: Date.now()
       });
-      msgEl.textContent = "Score saved! At least 30 answers to be on the leaderboard";
+      msgEl.textContent = "Score saved!";
       nameInput.value = "";
       await loadLeaderboards();
     } catch (err) {
@@ -781,7 +789,7 @@
 
         listEl.innerHTML = "";
 
-        // Only count runs with at least 30 questions AND scope === "all"
+        // Only count runs with 30 questions AND scope === "all"
         const MIN_QUESTIONS = 30;
         const filtered = items.filter(item =>
           item.total >= MIN_QUESTIONS && item.scope === "all"
