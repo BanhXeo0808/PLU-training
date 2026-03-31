@@ -743,7 +743,7 @@
         listEl.innerHTML = "";
         items.forEach((item, index) => {
           const li = document.createElement("li");
-          li.textContent = `${index + 1}. ${item.name} — ${item.percent}% (${item.right}/${item.total})`;
+          li.textContent = `${item.name} — ${item.percent}% (${item.right}/${item.total})`;
           listEl.appendChild(li);
         });
       } catch (err) {
