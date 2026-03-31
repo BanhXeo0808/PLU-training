@@ -496,6 +496,7 @@
     const tabQuiz = document.getElementById('tabQuiz');
     const setFastBtn = document.getElementById('setFast');
     const setFullBtn = document.getElementById('setFull');
+    const resetQuizBtn = document.getElementById('resetQuiz');
 
     function filteredItems() {
       return activeItems.filter(item => {
@@ -563,6 +564,16 @@
       quizAnswer.value = '';
       feedback.textContent = '';
       feedback.className = 'feedback';
+    }
+    function resetQuiz() {
+      state.score = { right: 0, total: 0 };
+      state.quizFinished = false;
+      state.allRun = true;
+      feedback.textContent = '';
+      feedback.className = 'feedback';
+      quizAnswer.value = '';
+      pickQuestion();
+      render();
     }
 
     // category filter buttons
@@ -679,8 +690,9 @@
       pickQuestion();
     }
 
-    setFastBtn.addEventListener('click', useFast);
-    setFullBtn.addEventListener('click', useFull);
+    if (setFastBtn) setFastBtn.addEventListener('click', useFast);
+    if (setFullBtn) setFullBtn.addEventListener('click', useFull);
+    if (resetQuizBtn) resetQuizBtn.addEventListener('click', resetQuiz);
 
     // initial state
     useFast();
