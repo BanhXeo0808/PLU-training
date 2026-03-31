@@ -221,32 +221,44 @@
             <button class="btn btn-primary" id="checkAnswer">Check</button>
           </div>
           <div class="feedback" id="feedback"></div>
-                    <!-- Leaderboard: name input + save button + list -->
-          <div id="leaderboard-card" style="margin-top: 16px; padding: 12px; border-radius: 12px; background-color: #f8fafc; border: 1px solid #e2e8f0;">
-            <h3 style="margin: 0 0 8px 0; font-size: 18px;">Leaderboard</h3>
-
-            <div style="display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
-              <input
-                id="player-name-input"
-                type="text"
-                placeholder="Type your name"
-                maxlength="20"
-                style="flex: 1; min-width: 140px; padding: 6px 8px; border-radius: 8px; border: 1px solid #cbd5f5;"
-              />
-              <button
-                id="save-score-btn"
-                class="btn btn-primary"
-                style="padding: 6px 12px; border-radius: 8px; cursor: pointer;"
-              >
-                Save score
-              </button>
+          <div id="leaderboard-wrapper" style="margin-top: 16px; display: grid; gap: 12px;">
+            <!-- Input + button shared -->
+            <div style="padding: 12px; border-radius: 12px; background-color: #f8fafc; border: 1px solid #e2e8f0;">
+              <h3 style="margin: 0 0 8px 0; font-size: 18px;">Save your score</h3>
+              <div style="display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
+                <input
+                  id="player-name-input"
+                  type="text"
+                  placeholder="Type your name"
+                  maxlength="20"
+                  style="flex: 1; min-width: 140px; padding: 6px 8px; border-radius: 8px; border: 1px solid #cbd5f5;"
+                />
+                <button
+                  id="save-score-btn"
+                  class="btn btn-primary"
+                  style="padding: 6px 12px; border-radius: 8px; cursor: pointer;"
+                >
+                  Save score
+                </button>
+              </div>
+              <small id="leaderboard-message" style="display:block; margin-bottom: 6px; color:#64748b;"></small>
             </div>
 
-            <small id="leaderboard-message" style="display:block; margin-bottom: 6px; color:#64748b;"></small>
+            <!-- Fast mover leaderboard -->
+            <div style="padding: 12px; border-radius: 12px; background-color: #f8fafc; border: 1px solid #e2e8f0;">
+              <h3 style="margin: 0 0 8px 0; font-size: 16px;">Fast mover leaderboard</h3>
+              <ol id="leaderboard-fast" style="padding-left: 20px; margin: 0; font-size: 14px; color:#0f172a;">
+                <!-- Fast scores -->
+              </ol>
+            </div>
 
-            <ol id="leaderboard-list" style="padding-left: 20px; margin: 0; font-size: 14px; color:#0f172a;">
-              <!-- Scores will be injected here -->
-            </ol>
+            <!-- Full PLU leaderboard -->
+            <div style="padding: 12px; border-radius: 12px; background-color: #f8fafc; border: 1px solid #e2e8f0;">
+              <h3 style="margin: 0 0 8px 0; font-size: 16px;">Full PLU leaderboard</h3>
+              <ol id="leaderboard-full" style="padding-left: 20px; margin: 0; font-size: 14px; color:#0f172a;">
+                <!-- Full scores -->
+              </ol>
+            </div>
           </div>
         </article>
       </section>
@@ -614,6 +626,7 @@
       activeItems = fastItems;
       state.filter = 'all';
       state.search = '';
+      window.currentMode = 'fast';
       setFastBtn.classList.add('btn-primary');
       setFastBtn.classList.remove('btn-secondary');
       setFullBtn.classList.add('btn-secondary');
@@ -626,6 +639,7 @@
       activeItems = allItems;
       state.filter = 'all';
       state.search = '';
+      window.currentMode = 'full';
       setFullBtn.classList.add('btn-primary');
       setFullBtn.classList.remove('btn-secondary');
       setFastBtn.classList.add('btn-secondary');
@@ -669,8 +683,9 @@
 
     const nameInput = document.getElementById("player-name-input");
     const saveBtn = document.getElementById("save-score-btn");
-    const listEl = document.getElementById("leaderboard-list");
     const msgEl = document.getElementById("leaderboard-message");
+    const fastListEl = document.getElementById("leaderboard-fast");
+    const fullListEl = document.getElementById("leaderboard-full");
 
     async function saveScoreToFirestore(name, right, total) {
       if (!name) {
@@ -701,39 +716,33 @@
       }
     }
 
-    async function loadLeaderboard() {
-      if (!listEl) return;
-      listEl.innerHTML = "<li>Loading...</li>";
+    async function saveScoreToFirestore(name, right, total, mode) {
+      if (!name) {
+        msgEl.textContent = "Please enter your name before saving.";
+        return;
+      }
+      if (!total || total === 0) {
+        msgEl.textContent = "Do the quiz first to get a score.";
+        return;
+      }
+
+      const percent = Math.round((right / total) * 100);
 
       try {
-        const q = query(
-          collection(db, "scores"),
-          orderBy("percent", "desc"),
-          orderBy("createdAt", "asc"),
-          limit(20)
-        );
-
-        const snap = await getDocs(q);
-        const items = [];
-
-        snap.forEach((doc) => {
-          items.push(doc.data());
+        await addDoc(collection(db, "scores"), {
+          name,
+          right,
+          total,
+          percent,
+          mode,          // "fast" or "full"
+          createdAt: Date.now()
         });
-
-        if (items.length === 0) {
-          listEl.innerHTML = "<li>No scores yet. Be the first!</li>";
-          return;
-        }
-
-        listEl.innerHTML = "";
-        items.forEach((item, index) => {
-          const li = document.createElement("li");
-          li.textContent = `${index + 1}. ${item.name} — ${item.percent}% (${item.right}/${item.total})`;
-          listEl.appendChild(li);
-        });
+        msgEl.textContent = "Score saved!";
+        nameInput.value = "";
+        await loadLeaderboards();
       } catch (err) {
         console.error(err);
-        listEl.innerHTML = "<li>Could not load leaderboard.</li>";
+        msgEl.textContent = "Error saving score. Try again.";
       }
     }
 
@@ -749,7 +758,45 @@
     });
 
     // Load leaderboard on page load
-    loadLeaderboard();
+    async function loadLeaderboards() {
+      async function loadOne(mode, listEl) {
+        if (!listEl) return;
+        listEl.innerHTML = "<li>Loading...</li>";
+
+        try {
+          const q = query(
+            collection(db, "scores"),
+            where("mode", "==", mode),
+            orderBy("percent", "desc"),
+            limit(20) // 20 entries
+          );
+
+          const snap = await getDocs(q);
+          const items = [];
+          snap.forEach((doc) => items.push(doc.data()));
+
+          if (items.length === 0) {
+            listEl.innerHTML = "<li>No scores yet.</li>";
+            return;
+          }
+
+          listEl.innerHTML = "";
+          items.forEach((item, index) => {
+            const li = document.createElement("li");
+            li.textContent = `${index + 1}. ${item.name} — ${item.percent}% (${item.right}/${item.total})`;
+            listEl.appendChild(li);
+          });
+        } catch (err) {
+          console.error(err);
+          listEl.innerHTML = "<li>Could not load leaderboard.</li>";
+        }
+      }
+
+      await Promise.all([
+        loadOne("fast", fastListEl),
+        loadOne("full", fullListEl)
+      ]);
+    }
   </script>
 </body>
 </html>
