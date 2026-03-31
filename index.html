@@ -120,7 +120,7 @@
     #leaderboard-fast,
     #leaderboard-full {
       list-style: none;
-      padding-left: 20;
+      padding-left: 0;
     }
     @media (max-width: 1024px) {
       .app{grid-template-columns:1fr}
@@ -464,7 +464,8 @@
       filter: 'all',
       search: '',
       score: { right: 0, total: 0 },
-      currentQuestion: null
+      currentQuestion: null,
+      allRun: true
     };
     window.state = state;
 
@@ -561,6 +562,12 @@
       .querySelectorAll('.nav button')
       .forEach(btn => btn.addEventListener('click', () => {
         state.filter = btn.dataset.filter;
+
+        // If filter is not "all", this run is no longer an all-items run
+        if (state.filter !== 'all') {
+          state.allRun = false;
+        }
+
         render();
         pickQuestion();
       }));
@@ -632,6 +639,8 @@
       activeItems = fastItems;
       state.filter = 'all';
       state.search = '';
+      state.score = { right: 0, total: 0 };
+      state.allRun = true;
       window.currentMode = 'fast';
       setFastBtn.classList.add('btn-primary');
       setFastBtn.classList.remove('btn-secondary');
@@ -645,6 +654,8 @@
       activeItems = allItems;
       state.filter = 'all';
       state.search = '';
+      state.score = { right: 0, total: 0 };
+      state.allRun = true;
       window.currentMode = 'full';
       setFullBtn.classList.add('btn-primary');
       setFullBtn.classList.remove('btn-secondary');
@@ -693,7 +704,7 @@
   const fastListEl = document.getElementById("leaderboard-fast");
   const fullListEl = document.getElementById("leaderboard-full");
 
-  async function saveScoreToFirestore(name, right, total, mode) {
+  async function saveScoreToFirestore(name, right, total, mode, scope, allRun) {
     if (!name) {
       msgEl.textContent = "Please enter your name before saving.";
       return;
@@ -702,7 +713,10 @@
       msgEl.textContent = "Do the quiz first to get a score.";
       return;
     }
-
+    if (!allRun || scope !== "all") {
+    msgEl.textContent = "Leaderboard only counts runs done on All items from start.";
+    return;
+  }
     const percent = Math.round((right / total) * 100);
 
     try {
@@ -712,9 +726,10 @@
         total,
         percent,
         mode,
+        scope,
         createdAt: Date.now()
       });
-      msgEl.textContent = "Score saved!";
+      msgEl.textContent = "Score saved! At least 30 answers to be on the leaderboard";
       nameInput.value = "";
       await loadLeaderboards();
     } catch (err) {
@@ -722,7 +737,15 @@
       msgEl.textContent = "Error saving score. Try again.";
     }
   }
-
+  function formatDate(ms) {
+    if (!ms) return "";
+    const d = new Date(ms);
+    const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const month = monthNames[d.getMonth()];
+    const day = d.getDate();
+    const year = d.getFullYear();
+    return `${month} ${day}, ${year}`;
+  }
   async function loadLeaderboards() {
     async function loadOne(mode, listEl) {
       if (!listEl) return;
@@ -733,7 +756,7 @@
           collection(db, "scores"),
           where("mode", "==", mode),
           orderBy("percent", "desc"),
-          limit(20)
+          limit(50)
         );
 
         const snap = await getDocs(q);
@@ -746,9 +769,47 @@
         }
 
         listEl.innerHTML = "";
-        items.forEach((item, index) => {
+
+        // Only count runs with at least 30 questions AND scope === "all"
+        const MIN_QUESTIONS = 30;
+        const filtered = items.filter(item =>
+          item.total >= MIN_QUESTIONS && item.scope === "all"
+        );
+        if (filtered.length === 0) {
+          listEl.innerHTML =
+            `<li>No scores yet.</li>`;
+          return;
+        }
+
+        const bestByName = new Map();
+        filtered.forEach((item) => {
+          const existing = bestByName.get(item.name);
+          if (
+            !existing ||
+            item.percent > existing.percent ||
+            (item.percent === existing.percent && item.total > existing.total) ||
+            (item.percent === existing.percent &&
+             item.total === existing.total &&
+             item.createdAt > existing.createdAt)
+          ) {
+            bestByName.set(item.name, item);
+          }
+        });
+
+        const uniqueItems = Array.from(bestByName.values())
+          .sort((a, b) => {
+            if (b.percent !== a.percent) return b.percent - a.percent;
+            if (b.total !== a.total) return b.total - a.total;
+            return b.createdAt - a.createdAt;
+          })
+          .slice(0, 20);
+
+        uniqueItems.forEach((item, index) => {
           const li = document.createElement("li");
-          li.textContent = `${index + 1}. ${item.name} — ${item.percent}% (${item.right}/${item.total})`;
+          const dateLabel = formatDate(item.createdAt);
+          li.textContent =
+            `${index + 1}. ${item.name} — ${item.percent}% (${item.right}/${item.total})` +
+            (dateLabel ? ` · ${dateLabel}` : "");
           listEl.appendChild(li);
         });
       } catch (err) {
@@ -768,8 +829,10 @@
     const right = window.state?.score?.right ?? 0;
     const total = window.state?.score?.total ?? 0;
     const mode = window.currentMode || "fast";
+    const scope = window.state?.filter || "all";
+    const allRun = window.state?.allRun ?? false;
 
-    saveScoreToFirestore(name, right, total, mode);
+    saveScoreToFirestore(name, right, total, mode, scope, allRun);
   });
 
   // Load both boards on page load
