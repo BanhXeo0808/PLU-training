@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Produce PLU Trainer</title>
 
-<!-- iOS / mobile web app -->
+  <!-- iOS / mobile web app -->
   <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="PLU Training">
@@ -16,7 +16,7 @@
   <!-- (optional) favicons for browsers -->
   <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
-  
+
   <link rel="preconnect" href="https://api.fontshare.com">
   <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
   <style>
@@ -52,12 +52,21 @@
     img{display:block;max-width:100%;height:auto}
     button,input{font:inherit;color:inherit}
     button{cursor:pointer;border:none;background:none}
-    .plu-card img{
-      display:block;
-      width:100%;
-      max-height:180px;
-      object-fit:cover;
-      border-radius:12px;
+    #quizImage {
+      width: 100%;
+      max-height: 780px;
+      object-fit: cover;
+      border-radius: 12px;
+      margin-top: 8px;
+    }
+    .plu-card-img {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: 180px;
+      object-fit: cover;
+      border-radius: 12px;
+      margin-bottom: 8px;
     }
     .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
     .app{display:grid;grid-template-columns:290px 1fr;min-height:100dvh}
@@ -98,8 +107,9 @@
     .section-head{display:flex;justify-content:space-between;align-items:center;gap:var(--space-3);margin-bottom:var(--space-4)}
     .section-head h3{font-size:var(--text-lg)}
     .section-head p{font-size:var(--text-sm);color:var(--color-text-muted)}
-    .flash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:var(--space-4)}
+    .flash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:var(--space-4); justify-content: center;}
     .plu-card{padding:var(--space-5);border-radius:var(--radius-xl);background:linear-gradient(180deg,var(--color-surface),var(--color-surface-2));border:1px solid var(--color-divider);display:grid;gap:var(--space-3)}
+    .plu-card {max-width: 320px; margin-inline: auto;}
     .plu-card .meta{display:flex;justify-content:space-between;gap:var(--space-2);align-items:center;flex-wrap:wrap}
     .pill{display:inline-flex;align-items:center;min-height:28px;padding:.3rem .7rem;border-radius:var(--radius-full);font-size:var(--text-xs);text-transform:uppercase;letter-spacing:.08em;font-weight:700}
     .pill.cat{background:var(--color-primary-highlight);color:var(--color-primary)}
@@ -139,9 +149,127 @@
     }
     #leaderboard-fast,
     #leaderboard-full {
-      list-style: none;
-      padding-left: 0;
+      padding-left: 20px;
+      margin: 0;
+      font-size: 14px;
+      color: #0f172a;
     }
+    .leaderboard-wrapper {
+      margin-top: 16px;
+      display: grid;
+      gap: 12px;
+    }
+    .leaderboard-panel {
+      padding: 12px;
+      border-radius: 12px;
+      background-color: #f8fafc;
+      border: 1px solid #e2e8f0;
+    }
+    .leaderboard-panel h3 {
+      margin: 0 0 8px 0;
+    }
+    .leaderboard-panel h3.title-lg { font-size: 18px; }
+    .leaderboard-panel h3.title-sm { font-size: 16px; }
+    .leaderboard-save-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .leaderboard-save-row input {
+      flex: 1;
+      min-width: 140px;
+      padding: 6px 8px;
+      border-radius: 8px;
+      border: 1px solid #cbd5f5;
+    }
+    .leaderboard-save-row .btn {
+      padding: 6px 12px;
+      border-radius: 8px;
+    }
+    #leaderboard-message {
+      display: block;
+      margin-bottom: 6px;
+      color: #64748b;
+    }
+    /* ── Animations ──────────────────────────────────────────── */
+
+    /* 1. Nav button smooth transition */
+    .nav button {
+      transition: background var(--transition-interactive), color var(--transition-interactive);
+    }
+
+    /* 2. Flash card hover lift */
+    .plu-card {
+      transition: transform 200ms ease, box-shadow 200ms ease;
+    }
+    .plu-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-md);
+    }
+
+    /* 2b. Flash card staggered entrance */
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .plu-card {
+      animation: cardIn 280ms ease both;
+      animation-delay: calc(var(--card-i, 0) * 45ms);
+    }
+
+    /* 3. Button press scale */
+    .btn {
+      transition: background var(--transition-interactive), transform 80ms ease;
+    }
+    .btn:active {
+      transform: scale(0.95);
+    }
+
+    /* 4. Correct answer input pulse */
+    @keyframes correctPulse {
+      0%   { box-shadow: 0 0 0 0 rgba(46,106,53,0.5); }
+      60%  { box-shadow: 0 0 0 10px rgba(46,106,53,0); }
+      100% { box-shadow: 0 0 0 0 rgba(46,106,53,0); }
+    }
+    @keyframes wrongShake {
+      0%,100% { transform: translateX(0); }
+      20%     { transform: translateX(-6px); }
+      40%     { transform: translateX(6px); }
+      60%     { transform: translateX(-4px); }
+      80%     { transform: translateX(4px); }
+    }
+    .answer-row input.pulse-correct {
+      animation: correctPulse 600ms ease forwards;
+      border-color: var(--color-success);
+    }
+    .answer-row input.shake-wrong {
+      animation: wrongShake 380ms ease;
+      border-color: var(--color-primary);
+    }
+
+    /* 5. Quiz question slide transition */
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(28px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes slideOutLeft {
+      from { opacity: 1; transform: translateX(0); }
+      to   { opacity: 0; transform: translateX(-28px); }
+    }
+    .prompt.slide-in  { animation: slideInRight 220ms cubic-bezier(.16,1,.3,1) both; }
+    .prompt.slide-out { animation: slideOutLeft  160ms ease both; pointer-events: none; }
+
+    /* Feedback fade in */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .feedback.visible {
+      animation: fadeUp 200ms ease both;
+    }
+
+    /* ────────────────────────────────────────────────────────── */
     @media (max-width: 1024px) {
       .app{grid-template-columns:1fr}
       .sidebar{border-right:none;border-bottom:1px solid var(--color-border)}
@@ -180,6 +308,10 @@
       <div class="sidebar-card">
         <strong>2 Options</strong>
         <p>Fast mover or full list — switch on the top bar.</p>
+      </div>
+      <div class="sidebar-card">
+        <strong>To save score</strong>
+        <p>Type your name after answer 30 questions to save your score</p>
       </div>
     </aside>
     <main class="main">
@@ -234,7 +366,11 @@
         <article class="card">
           <div class="section-head">
           <div>
-            <h3>Quick quiz</h3>
+            <h3>Quick quiz
+              <span id="questionCounter" style="font-size: 0.8em; margin-left: 8px; color: var(--color-text-muted);">
+                00/30
+              </span>
+            </h3>
             <p>Type the code from memory.</p>
           </div>
           <div style="display:flex; gap:8px;">
@@ -245,9 +381,7 @@
           <div class="prompt">
             <small>What is the code for</small>
             <strong id="quizItem">Loading</strong>
-            <img id="quizImage"
-                alt=""
-                style="width:100%; max-height:480px; object-fit:cover; border-radius:12px; margin-top:8px; display:none;">
+            <img id="quizImage" alt="" style="display:none;">
             <div class="helper" id="quizMeta"></div>
           </div>
           <div class="answer-row">
@@ -255,41 +389,34 @@
             <button class="btn btn-primary" id="checkAnswer">Check</button>
           </div>
           <div class="feedback" id="feedback"></div>
-          <div id="leaderboard-wrapper" style="margin-top: 16px; display: grid; gap: 12px;">
+          <div id="leaderboard-wrapper" class="leaderboard-wrapper">
             <!-- Input + button shared -->
-            <div style="padding: 12px; border-radius: 12px; background-color: #f8fafc; border: 1px solid #e2e8f0;">
-              <h3 style="margin: 0 0 8px 0; font-size: 18px;">Save your score</h3>
-              <div style="display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
+            <div class="leaderboard-panel">
+              <h3 class="title-lg">Save your score</h3>
+              <div class="leaderboard-save-row">
                 <input
                   id="player-name-input"
                   type="text"
                   placeholder="Type your name"
                   maxlength="20"
-                  style="flex: 1; min-width: 140px; padding: 6px 8px; border-radius: 8px; border: 1px solid #cbd5f5;"
                 />
-                <button
-                  id="save-score-btn"
-                  class="btn btn-primary"
-                  style="padding: 6px 12px; border-radius: 8px; cursor: pointer;"
-                >
-                  Save score
-                </button>
+                <button id="save-score-btn" class="btn btn-primary">Save score</button>
               </div>
-              <small id="leaderboard-message" style="display:block; margin-bottom: 6px; color:#64748b;"></small>
+              <small id="leaderboard-message"></small>
             </div>
 
             <!-- Fast mover leaderboard -->
-            <div style="padding: 12px; border-radius: 12px; background-color: #f8fafc; border: 1px solid #e2e8f0;">
-              <h3 style="margin: 0 0 8px 0; font-size: 16px;">Fast mover leaderboard</h3>
-              <ol id="leaderboard-fast" style="padding-left: 20px; margin: 0; font-size: 14px; color:#0f172a;">
+            <div class="leaderboard-panel">
+              <h3 class="title-sm">Fast mover leaderboard</h3>
+              <ol id="leaderboard-fast">
                 <!-- Fast scores -->
               </ol>
             </div>
 
             <!-- Full PLU leaderboard -->
-            <div style="padding: 12px; border-radius: 12px; background-color: #f8fafc; border: 1px solid #e2e8f0;">
-              <h3 style="margin: 0 0 8px 0; font-size: 16px;">Full PLU leaderboard</h3>
-              <ol id="leaderboard-full" style="padding-left: 20px; margin: 0; font-size: 14px; color:#0f172a;">
+            <div class="leaderboard-panel">
+              <h3 class="title-sm">Full PLU leaderboard</h3>
+              <ol id="leaderboard-full">
                 <!-- Full scores -->
               </ol>
             </div>
@@ -512,6 +639,7 @@
 
     const studyView = document.getElementById('studyView');
     const quizView = document.getElementById('quizView');
+    const questionCounter = document.getElementById("questionCounter");
     const tabStudy = document.getElementById('tabStudy');
     const tabQuiz = document.getElementById('tabQuiz');
     const setFastBtn = document.getElementById('setFast');
@@ -541,8 +669,8 @@
         : 'No attempts yet';
       codeTypes.textContent = new Set(items.map(item => item.type)).size;
 
-      flashGrid.innerHTML = items.map(item => `
-        <article class="plu-card">
+      flashGrid.innerHTML = items.map((item, i) => `
+        <article class="plu-card" style="--card-i:${i}">
           <div class="meta">
             <span class="pill cat">${item.category}</span>
             <span class="pill mode">${item.type || 'code'}</span>
@@ -551,8 +679,8 @@
           <img
             src="assets/produce/plu-${item.plu}.jpg"
             alt="${item.name}"
+            class="plu-card-img"
             onerror="this.style.display='none';"
-            style="width:100%; max-height:180px; object-fit:cover; border-radius:12px; margin-bottom:8px;"
           >
 
           <div class="produce-name">${item.name}</div>
@@ -585,21 +713,51 @@
     }
 
     function pickQuestion() {
-      const pool = filteredItems().length ? filteredItems() : activeItems;
-      state.currentQuestion = pool[Math.floor(Math.random() * pool.length)];
+      // Only filter by category, ignore search term
+      const pool = activeItems.filter(item => {
+        return state.filter === "all" || item.category === state.filter;
+      });
 
-      quizItem.textContent = state.currentQuestion.name;
-      quizMeta.textContent = `${state.currentQuestion.category} · ${state.currentQuestion.type}`;
+      const items = pool.length ? pool : activeItems;
 
-      const imgPath = `assets/produce/plu-${state.currentQuestion.plu}.jpg`;
-      quizImage.src = imgPath;
-      quizImage.style.display = 'block';
-      quizImage.onerror = () => { quizImage.style.display = 'none'; };
+      state.currentQuestion = items[Math.floor(Math.random() * items.length)];
 
-      quizAnswer.value = '';
-      feedback.textContent = '';
-      feedback.className = 'feedback';
+      const prompt = document.querySelector(".prompt");
+      prompt.classList.remove("slide-in");
+      prompt.classList.add("slide-out");
+
+      setTimeout(() => {
+        quizItem.textContent = state.currentQuestion.name;
+        quizMeta.textContent =
+          state.currentQuestion.category + " · " + state.currentQuestion.type;
+
+        const imgPath = `assets/produce/plu-${state.currentQuestion.plu}.jpg`;
+        quizImage.src = imgPath;
+        quizImage.style.display = "block";
+        quizImage.onerror = () => {
+          quizImage.style.display = "none";
+        };
+
+        quizAnswer.value = "";
+        feedback.textContent = "";
+        feedback.className = "feedback";
+
+        quizAnswer.classList.remove("pulse-correct", "shake-wrong");
+
+        prompt.classList.remove("slide-out");
+        prompt.classList.add("slide-in");
+      }, 160);
     }
+
+    function updateQuestionCounter() {
+      const current = state.score.total || 0;
+      const max = state.maxQuestions || 30;
+
+      // format with leading zero (01, 02, ..., 10)
+      const padded = current.toString().padStart(2, "0");
+      questionCounter.textContent = `${padded}/${max}`;
+    }
+
     function resetQuiz() {
       state.score = { right: 0, total: 0 };
       state.quizFinished = false;
@@ -609,6 +767,7 @@
       quizAnswer.value = '';
       pickQuestion();
       render();
+      updateQuestionCounter();
     }
 
     // category filter buttons
@@ -636,7 +795,10 @@
       render();
     });
 
-    document.getElementById('nextQuestion').addEventListener('click', pickQuestion);
+    document.getElementById('nextQuestion').addEventListener('click', () => {
+      if (state.quizFinished) return;
+      pickQuestion();
+    });
 
     document.getElementById('checkAnswer').addEventListener('click', () => {
       if (!state.currentQuestion || state.quizFinished) return;
@@ -644,13 +806,18 @@
       state.score.total += 1;
       const isCorrect = quizAnswer.value.trim() === state.currentQuestion.plu;
 
+      // Animate the input
+      quizAnswer.classList.remove('pulse-correct', 'shake-wrong');
+      void quizAnswer.offsetWidth; // force reflow to restart animation
+      quizAnswer.classList.add(isCorrect ? 'pulse-correct' : 'shake-wrong');
+
       if (isCorrect) {
         state.score.right += 1;
         feedback.textContent = 'Correct. Nice work.';
-        feedback.className = 'feedback success';
+        feedback.className = 'feedback success visible';
       } else {
         feedback.textContent = `Ah ah. ${state.currentQuestion.name} is ${state.currentQuestion.plu}.`;
-        feedback.className = 'feedback error';
+        feedback.className = 'feedback error visible';
       }
 
       if (state.score.total >= state.maxQuestions) {
@@ -663,6 +830,7 @@
       }
 
       render();
+      updateQuestionCounter();
     });
 
     quizAnswer.addEventListener('keydown', e => {
@@ -677,6 +845,8 @@
       tabStudy.classList.remove('btn-secondary');
       tabQuiz.classList.add('btn-secondary');
       tabQuiz.classList.remove('btn-primary');
+
+      searchInput.disabled = false;
     }
 
     function showQuiz() {
@@ -686,6 +856,8 @@
       tabQuiz.classList.remove('btn-secondary');
       tabStudy.classList.add('btn-secondary');
       tabStudy.classList.remove('btn-primary');
+
+      searchInput.disabled = true;
       pickQuestion();
     }
 
