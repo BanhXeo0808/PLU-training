@@ -33,6 +33,7 @@
       font-size: 0.9rem;
       color: #475569;
     }
+    #status.error { color: #dc2626; }
   </style>
 </head>
 <body>
@@ -43,13 +44,8 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-    import {
-      getFirestore,
-      collection,
-      getDocs,
-      deleteDoc,
-      doc
-    } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAPKiEPTU44_FtBiDbM0O7hBjvgHdrp_Pk",
@@ -63,25 +59,41 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app);
 
     const resetBtn = document.getElementById("reset-scores-btn");
     const statusEl = document.getElementById("status");
 
+    async function deleteAllScores() {
+      const snap = await getDocs(collection(db, "scores"));
+      const count = snap.size;
+      if (count === 0) {
+        statusEl.textContent = "No scores to delete.";
+        return;
+      }
+      const promises = snap.docs.map(d => deleteDoc(doc(db, "scores", d.id)));
+      await Promise.all(promises);
+      return count;
+    }
+
     resetBtn.addEventListener("click", async () => {
-      const ok = confirm("Reset ALL scores for both leaderboards?");
+      const ok = confirm("Reset ALL scores for both leaderboards? This cannot be undone.");
       if (!ok) return;
 
       resetBtn.disabled = true;
-      statusEl.textContent = "Clearing scores...";
+      statusEl.textContent = "Signing in...";
+      statusEl.classList.remove("error");
 
       try {
-        const snap = await getDocs(collection(db, "scores"));
-        const count = snap.size;
-        await Promise.all(snap.docs.map(d => deleteDoc(doc(db, "scores", d.id))));
+        // Sign in anonymously so Firestore rules allow the delete
+        await signInAnonymously(auth);
+        statusEl.textContent = "Clearing scores...";
+        const count = await deleteAllScores();
         statusEl.textContent = `Done — ${count} score${count !== 1 ? "s" : ""} deleted.`;
       } catch (err) {
         console.error(err);
-        statusEl.textContent = "Error clearing scores.";
+        statusEl.textContent = "Error clearing scores: " + err.message;
+        statusEl.classList.add("error");
       } finally {
         resetBtn.disabled = false;
       }
